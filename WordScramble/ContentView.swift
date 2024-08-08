@@ -17,7 +17,9 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var errorTitle = ""
     @State private var showingError = false
-
+    
+    @State private var score = 0
+    
     var body: some View {
         NavigationStack {
             List {
@@ -32,8 +34,19 @@ struct ContentView: View {
                         Text(word)
                     }
                 }
+                
+                Section("Score") {
+                    Text("Your score = \(score)")
+                }
             }.navigationTitle(rootWord)
-             .onSubmit { addNewWord() }
+                .onSubmit { addNewWord() }
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Change word") {
+                            startGame()
+                        }
+                    }
+                }
         }.onAppear { startGame() }
             .alert(errorTitle, isPresented: $showingError) {
                 Button("OK") { }
@@ -43,18 +56,16 @@ struct ContentView: View {
     private func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        guard answer.count > 0 else { return }
-        
         guard isOriginal(word: answer) else {
             wordError(title: "Word used already", message: "Be more original")
             return
         }
-
+        
         guard isPossible(word: answer) else {
             wordError(title: "Word not possible", message: "You can't spell that word from '\(rootWord)'!")
             return
         }
-
+        
         guard isReal(word: answer) else {
             wordError(title: "Word not recognized", message: "You can't just make them up, you know!")
             return
@@ -63,6 +74,8 @@ struct ContentView: View {
         withAnimation {
             usedWords.insert(answer, at: 0)
         }
+        
+        score += answer.count
         
         newWord = ""
     }
@@ -87,9 +100,11 @@ struct ContentView: View {
         !usedWords.contains(word)
     }
     
-    func isPossible(word: String) -> Bool {
+    private func isPossible(word: String) -> Bool {
+        guard word.count >= 3 && word != rootWord else { return false }
+        
         var tempWord = rootWord
-
+        
         for letter in word {
             if let pos = tempWord.firstIndex(of: letter) {
                 tempWord.remove(at: pos)
@@ -97,7 +112,7 @@ struct ContentView: View {
                 return false
             }
         }
-
+        
         return true
     }
     
